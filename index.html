@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Central de Conhecimento DelRio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f5f0fc, #ede0f8);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes bounce {
+      0%,60%,100% { transform:translateY(0); background:#D8C4F0; }
+      30% { transform:translateY(-6px); background:#5B2D8E; }
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    #app {
+      width: 100%;
+      max-width: 520px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f8fafc;
+      box-shadow: 0 0 60px rgba(91,45,142,.18);
+    }
+
+    /* HEADER */
+    #header {
+      background: linear-gradient(135deg, #5B2D8E, #3A1B5E);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+    #header-avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: rgba(255,255,255,.18);
+      border: 2px solid rgba(240,192,64,.6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    #header-title { font-size: 17px; font-weight: 700; color: white; letter-spacing: .01em; }
+    #header-sub {
+      font-size: 10.5px; color: rgba(255,255,255,.7);
+      display: flex; align-items: center; gap: 5px; margin-top: 2px;
+    }
+    #header-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #F0C040; display: inline-block;
+      animation: pulse 2s infinite;
+    }
+    #header-badge {
+      background: #F0C040; border-radius: 8px;
+      padding: 4px 10px; font-size: 11px;
+      color: #3A1B5E; font-weight: 700;
+      margin-left: auto; flex-shrink: 0;
+    }
+
+    /* TOPICS BAR */
+    #topics {
+      background: white;
+      border-bottom: 1px solid rgba(91,45,142,.12);
+      padding: 10px 14px;
+      display: flex; gap: 8px;
+      overflow-x: auto; flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    #topics::-webkit-scrollbar { display: none; }
+    .chip {
+      flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
+      border: 1px solid rgba(91,45,142,.25);
+      background: white; color: #5B2D8E;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; font-family: inherit;
+      transition: all .2s;
+    }
+    .chip:hover { background: #5B2D8E; color: white; border-color: #5B2D8E; }
+
+    /* MESSAGES */
+    #messages {
+      flex: 1; overflow-y: auto;
+      padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 14px;
+      background: #f8fafc;
+    }
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-thumb { background: #D8C4F0; border-radius: 4px; }
+
+    .msg-row {
+      display: flex; gap: 10;
+      animation: fadeUp .3s ease both;
+    }
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      flex-shrink: 0; align-self: flex-end;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .msg-avatar.ai {
+      background: linear-gradient(135deg,#5B2D8E,#3A1B5E);
+      box-shadow: 0 2px 8px rgba(91,45,142,.35);
+    }
+    .msg-avatar.user { background: #1e293b; }
+
+    .msg-bubble {
+      max-width: 82%; padding: 13px 17px; border-radius: 18px;
+      font-size: 13.5px; line-height: 1.75;
+    }
+    .msg-bubble.ai {
+      background: white;
+      border: 1px solid rgba(91,45,142,.15);
+      border-bottom-left-radius: 4px;
+      color: #0f172a;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    }
+    .msg-bubble.user {
+      background: linear-gradient(135deg,#5B2D8E,#3A1B5E);
+      border-bottom-right-radius: 4px;
+      color: white;
+      box-shadow: 0 4px 16px rgba(91,45,142,.4);
+    }
+    .msg-title {
+      font-weight: 700; font-size: 14px; margin-bottom: 8px;
+      color: #5B2D8E;
+      border-bottom: 1px solid rgba(91,45,142,.15);
+      padding-bottom: 7px;
+    }
+    .msg-bubble p { margin: 1px 0; }
+    .msg-bubble p:empty { min-height: 6px; }
+
+    .msg-table { overflow-x: auto; margin-top: 8px; }
+    .msg-table table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    .msg-table td {
+      padding: 5px 10px;
+      border: 1px solid rgba(91,45,142,.15);
+    }
+    .msg-table tr.tbl-header td { background: rgba(91,45,142,.08); font-weight: 600; color: #5B2D8E; }
+    .msg-table tr.tbl-even td { background: transparent; }
+    .msg-table tr.tbl-odd td { background: rgba(0,0,0,.02); }
+
+    /* TYPING */
+    #typing {
+      display: none;
+      flex-direction: row; gap: 10px; align-items: flex-end;
+    }
+    #typing .t-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg,#5B2D8E,#3A1B5E);
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+    }
+    #typing .t-bubble {
+      background: white; border: 1px solid rgba(91,45,142,.15);
+      border-radius: 18px; border-bottom-left-radius: 4px;
+      padding: 14px 18px; display: flex; gap: 5px;
+    }
+    #typing .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #D8C4F0;
+    }
+    #typing .dot:nth-child(1) { animation: bounce 1.2s 0s infinite; }
+    #typing .dot:nth-child(2) { animation: bounce 1.2s .2s infinite; }
+    #typing .dot:nth-child(3) { animation: bounce 1.2s .4s infinite; }
+
+    /* INPUT */
+    #input-area {
+      background: white;
+      border-top: 1px solid rgba(91,45,142,.12);
+      padding: 12px 14px 18px;
+      flex-shrink: 0;
+    }
+    #quicks {
+      display: flex; gap: 7px; overflow-x: auto;
+      margin-bottom: 10px; scrollbar-width: none; padding-bottom: 2px;
+    }
+    #quicks::-webkit-scrollbar { display: none; }
+    .qbtn {
+      flex-shrink: 0; padding: 6px 12px; border-radius: 16px;
+      border: 1px solid rgba(91,45,142,.25);
+      background: white; color: #5B2D8E;
+      font-size: 11.5px; cursor: pointer;
+      font-family: inherit; font-weight: 600;
+      transition: all .2s; white-space: nowrap;
+    }
+    .qbtn:hover { background: #5B2D8E; color: white; border-color: #5B2D8E; }
+
+    #input-row { display: flex; gap: 10px; align-items: flex-end; }
+    #ta {
+      flex: 1; border: 1.5px solid rgba(91,45,142,.25);
+      border-radius: 24px; padding: 11px 18px;
+      font-family: inherit; font-size: 13.5px; color: #0f172a;
+      background: white; resize: none; outline: none;
+      line-height: 1.5; max-height: 100px; overflow-y: auto;
+      transition: all .2s;
+    }
+    #ta:focus { border-color: #5B2D8E; box-shadow: 0 0 0 3px rgba(91,45,142,.12); }
+    #send-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: none; flex-shrink: 0;
+      background: linear-gradient(135deg,#5B2D8E,#3A1B5E);
+      color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(91,45,142,.4);
+      transition: all .2s;
+    }
+    #send-btn:hover { transform: scale(1.08); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div id="header-avatar">💜</div>
+    <div style="flex:1">
+      <div id="header-title">Central de Conhecimento</div>
+      <div id="header-sub">
+        <span id="header-dot"></span>
+        DelRio — Maior fabricante de moda íntima do Brasil
+      </div>
+    </div>
+    <div id="header-badge">DelRio</div>
+  </div>
+
+  <!-- TOPICS BAR -->
+  <div id="topics"></div>
+
+  <!-- MESSAGES -->
+  <div id="messages">
+    <div id="typing">
+      <div class="t-avatar">💜</div>
+      <div class="t-bubble">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div id="input-area">
+    <div id="quicks"></div>
+    <div id="input-row">
+      <textarea id="ta" rows="1" placeholder="Pergunte sobre vendas, scripts, KPIs, trocas, comissão..."></textarea>
+      <button id="send-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// BASE DE CONHECIMENTO DELRIO
+// ============================================================
+const KB = {
+  abertura: {
+    keywords: ["abertura","abrir venda","recepcionar","receber cliente","boas vindas","primeiro contato","linha de abertura","script abertura"],
+    title: "🌟 Passo 1 — Abertura da Venda",
+    content: `**PASSO 1: ABERTURA DA VENDA**
+
+O objetivo é criar conexão genuína ANTES de falar em venda. Sem isso, a cliente não confia e a venda tende a falhar.
+
+**Use "Linhas de Abertura"** — observações alheias à venda:
+• Elogio a um acessório
+• Comentário sobre o clima ou cidade
+• ❌ Evite: política, futebol, credo
+
+**Posicionamento físico:**
+• Vá até o cliente — não atenda na porta
+• Posicione-se lateralmente (você não é barreira)
+• Contato visual desde a entrada
+• Nunca toque nas pessoas sem convite
+
+---
+
+**SCRIPTS PRONTOS:**
+
+📍 **Cliente novo:**
+"Olá! Bom dia/tarde, seja bem-vinda! Me chamo _______, que bom receber sua visita hoje! Como você se chama?"
+
+🔁 **Cliente recorrente:**
+"Olá! Bom dia/tarde, seja bem-vinda, sentimos sua falta, que bom te receber hoje! Aceita um café ou água?"
+
+💬 **Digital (WhatsApp):**
+"Olá! Bom dia/tarde, [nome], que bom receber seu contato hoje! 😊"
+
+---
+⚠️ **NUNCA diga:** "Posso ajudar?" ou "Quer uma ajuda?" — transmite passividade!`
+  },
+  sondagem: {
+    keywords: ["sondagem","perguntas abertas","persona","perfil cliente","consumidora","revendedora","empreendedora","renda extra","passo 2","descobrir cliente","mini tour"],
+    title: "🔍 Passo 2 — Sondagem",
+    content: `**PASSO 2: SONDAGEM**
+#conhecer #entender #mapear #potencialidade
+
+Use sempre **perguntas abertas** (impossível responder só sim/não).
+Pergunta-chave: **"Como posso te ajudar hoje?"**
+
+---
+
+**4 PERFIS DE CLIENTE:**
+
+👤 **Consumidora Final**
+Quer consumir, não tem consultora ou veio por curiosidade.
+
+💰 **Busca Renda Extra**
+Trabalha em outro emprego, quer complementar a renda. Vende online ou no trabalho.
+
+🏪 **Revendedora**
+Já vende outras marcas, porta a porta, tem experiência.
+
+🚀 **Empreendedora**
+Tem loja própria, rede de consultoras, atua digital + presencial. Maior ticket médio.
+
+---
+
+**SCRIPTS:**
+
+📍 **Novo cliente:**
+1. "O que a traz hoje em nossa loja?"
+2. Convide para mini tour pela loja
+3. **Prova social:** "A DelRio é uma marca brasileira com 60 anos de estrada na moda íntima, nascida no Ceará. Fabricamos para Calvin Klein, Adidas, Aramis — somos o maior fabricante de moda íntima do Brasil. Conhecia nossa história?"
+
+🔁 **Cliente recorrente:**
+1. "O que a traz em nossa loja hoje?"
+2. "Quais itens precisam de reposição?"
+3. "Houve procura por produto que você não tinha?"
+4. "Como foi seu último mês de venda?"
+5. "Qual margem de lucro conseguiu?"
+
+⚠️ **SONDE O QUE IMPEDE SUA CLIENTE RECORRENTE DE DECOLAR NAS VENDAS!**`
+  },
+  solucao: {
+    keywords: ["solucionar","solução","passo 3","modelo de negócio","apresentar produto","empreender","kit inicial","mix","best seller"],
+    title: "💡 Passo 3 — Solucionar a Vida do Cliente",
+    content: `**PASSO 3: SOLUCIONAR A VIDA DO CLIENTE**
+#Vender #demonstrar #empreender
+
+**Lembre-se:** Não vendemos moda íntima — **vendemos um modelo de negócio** que transforma a vida de mulheres!
+
+---
+
+**ARGUMENTOS FORTES DELRIO:**
+✅ Maior fabricante de moda íntima do Brasil
+✅ Fabricamos para Calvin Klein, Adidas, Aramis
+✅ 60 anos de história, matéria-prima própria
+✅ Consultoras lucram até **80% de margem** (vs 30% em cosméticos)
+✅ Tecnologias como seamless, tecidos altamente tecnológicos
+
+---
+
+**SCRIPTS:**
+
+📍 **Nova cliente:**
+1. "Quais produtos e tamanhos você gostaria de conhecer?"
+2. "Com apenas **R$ 1.000,00** você abre seu cadastro e começa a lucrar!"
+3. "80% das consultoras começaram pelo consumo próprio — se encantaram e melhoraram a renda!"
+4. "Posso criar um kit inicial ideal para você começar? Se precisar, trocamos até 30% dos produtos."
+
+🔁 **Cliente recorrente:**
+1. "Vamos repor seu estoque dos mais vendidos do mês anterior?"
+2. "Próximo mês temos [data comemorativa] — se prepare para arrebentar de vender!"
+3. "Qual ferramenta tem usado mais? WhatsApp, Instagram, catálogo digital?"
+
+---
+💡 **Dica:** Garanta que o kit tenha best-sellers dos 3 gêneros + 1 produto de alta margem!`
+  },
+  objecoes: {
+    keywords: ["objeção","objeções","não tenho dinheiro","medo de vender","outra marca","passo 4","não quero","caro","estoque parado","dificuldade"],
+    title: "🛡️ Passo 4 — Lidar com Objeções",
+    content: `**PASSO 4: LIDAR COM OBJEÇÕES**
+#Empatia #Confiança #Argumentação
+
+Objeção ≠ "Não definitivo". É uma oportunidade de esclarecimento!
+
+**Método:** Ouça → Empatia → Argumento → Solução → Confirme
+
+---
+
+**SCRIPTS PRONTOS:**
+
+💬 **"Não tenho dinheiro para investir."**
+"Entendo! Muitas consultoras começaram com pouco e foram crescendo com os lucros. Que tal montarmos um kit dentro do valor que você se sente confortável?"
+
+💬 **"Tenho medo de não conseguir vender."**
+"Esse medo é muito comum no início! Muitas começaram vendendo só para amigas e família, e construíram uma base sólida. Vamos montar um mix fácil de vender e muito procurado."
+
+💬 **"Já trabalho com outra marca."**
+"Ótimo, você já conhece o mercado! A DelRio pode diversificar seu portfólio — nossa margem de 80% está muito acima da média. Muitas revendedoras percebem excelente aceitação!"
+
+💬 **"Tive dificuldade em vender o mês passado."**
+"Entendo, [nome]. Vamos rever o mix de produtos para ajustar ao seu público. Posso te ajudar com estratégias no WhatsApp e Instagram também!"
+
+💬 **"Os preços estão altos."**
+"Nossos produtos têm excelente custo-benefício pela qualidade e alto valor percebido. Vamos focar nos itens com maior margem e melhor aceitação no mercado?"
+
+💬 **"Ainda tenho estoque parado."**
+"Isso acontece! Que tal planejarmos ações promocionais ou kits para girar esse estoque? Posso sugerir combinações para liquidar e abrir espaço para novidades."
+
+---
+⚠️ **Nunca contradiga diretamente a cliente! Conduza sempre de forma positiva.**`
+  },
+  fechamento: {
+    keywords: ["fechamento","fechar venda","passo 5","decisão","confirmar","cadastro","registrar","celebrar"],
+    title: "🎯 Passo 5 — Fechamento da Venda",
+    content: `**PASSO 5: FECHAMENTO DA VENDA**
+#Decisão #Confirmação #Celebração
+
+O fechamento deve ser **natural** — consequência de um bom atendimento, nunca pressão!
+
+---
+
+**4 PASSOS DO FECHAMENTO:**
+
+1️⃣ **Resumo dos Benefícios**
+Reforce os pontos que mais chamaram atenção da cliente.
+
+2️⃣ **Confirmação**
+"Ficou alguma dúvida? Está confortável com sua escolha?"
+
+3️⃣ **Convite à Ação**
+• "Posso registrar seu cadastro agora?"
+• "Você prefere o kit inicial ou selecionar os produtos você mesma?"
+• "Vamos fechar com PIX para garantir os 10% de desconto?"
+
+4️⃣ **Celebração**
+Demonstre entusiasmo genuíno pela decisão dela!
+"Tenho certeza que será um sucesso! Vamos juntas construir algo incrível! 🌟"
+
+---
+
+**PROCESSO NA LOJA:**
+• Acompanhe a cliente até o caixa
+• Enquanto o caixa processa, reforce a carreira comercial
+• Após pagamento, ofereça-se para carregar a sacola
+• Acompanhe até a porta
+• Faça "Confirmações e Convites" na saída
+
+---
+⚠️ Mostre o produto com as **duas mãos** — passa valor e cuidado!
+⚠️ Incentive a cliente a **tocar e testar** — aumenta o desejo de posse!`
+  },
+  posvenda: {
+    keywords: ["pós venda","pós-venda","fidelização","acompanhamento","passo 6","follow up","mensagem agradecimento","retenção"],
+    title: "💌 Passo 6 — Pós-Venda",
+    content: `**PASSO 6: PÓS-VENDA**
+#Fidelização #Acompanhamento #Relacionamento
+
+O atendimento não termina com a venda — é aí que começa a relação duradoura!
+
+---
+
+**4 PASSOS DO PÓS-VENDA:**
+
+1️⃣ **Agradeça** — mensagem personalizada no mesmo dia
+2️⃣ **Acompanhe** — contato após alguns dias para saber se está tudo certo
+3️⃣ **Seja Proativa** — ofereça suporte, novidades e promoções
+4️⃣ **Engaje** — convide para eventos, grupos, treinamentos
+
+---
+
+**SCRIPTS:**
+
+📍 **Nova cliente:**
+• "Olá! Estou entrando em contato para saber como está indo sua experiência com a DelRio. Precisa de alguma ajuda? Estou aqui para te apoiar!"
+• "Que bom falar! Vi que você começou com o kit inicial. Como estão as vendas? Posso te ajudar com alguma estratégia?"
+
+🔁 **Cliente recorrente:**
+• "Olá! Como foram as vendas do último mix que montamos? Quer ajustar algo para o próximo mês?"
+• "Queria te parabenizar pelo desempenho incrível! Pensou em explorar mais vendas online? Posso ajudar!"
+• "O [data comemorativa] está chegando. Vamos montar um mix estratégico para aumentar suas vendas?"
+
+---
+💡 **Dica:** Utilize os primeiros 15 min do dia para pós-venda — mensagem de agradecimento e acompanhamento das consultoras!`
+  },
+  kpis: {
+    keywords: ["kpi","indicadores","métricas","faturamento","tmc","tma","pa","ticket médio","cadastros","ativos","inativos","reativados","conversão","positivação","evolução"],
+    title: "📊 KPIs — Indicadores de Performance",
+    content: `**KPIs DELRIO — INDICADORES QUE IMPORTAM**
+
+**1. FATURAMENTO**
+Valor total das vendas no período.
+💡 Dica: Promoções em produtos de alto valor + acompanhamento diário para ajustes rápidos.
+
+**2. EVOLUÇÃO FINANCEIRA**
+Crescimento vs período anterior.
+💡 Dica: Analise sazonalidades e planeje ações nos meses fracos.
+
+**3. EVOLUÇÃO FÍSICA**
+Quantidade de itens vendidos vs período anterior.
+💡 Dica: Combos promocionais incentivam volume por cliente.
+
+**4. TMC — Ticket Médio por Cliente**
+Valor médio gasto por cada cliente.
+💡 Dica: Descontos progressivos para compras acima de determinado valor.
+
+**5. TMA — Ticket Médio por Atendimento**
+Faturamento médio por atendimento.
+💡 Dica: Estimule a equipe a oferecer produtos de maior valor em cada atendimento.
+
+**6. PA — Peças por Atendimento**
+Quantidade média de itens por atendimento.
+💡 Dica: Treine para sugerir itens complementares (cross-sell).
+
+**7. REATIVADOS**
+Clientes inativos que voltaram a comprar.
+💡 Dica: Promoções personalizadas com descontos exclusivos para inativos.
+
+**8. ATIVOS**
+Clientes com pelo menos uma compra no período.
+💡 Dica: Contato regular com novidades e programas de fidelidade.
+
+**9. CADASTROS**
+Novos clientes registrados.
+💡 Dica: Benefícios imediatos no cadastro — desconto na 1ª compra ou brindes.
+
+**10. ITENS**
+Meta em peças físicas.
+💡 Dica: Campanhas internas com prêmios por volume.
+
+**11. CONVERSÃO DE CARTEIRA**
+% de clientes da carteira que compraram.
+💡 Dica: Identifique quem não comprou e envie ofertas personalizadas.
+
+**12. POSITIVAÇÃO DE BASE**
+% de clientes ativos que compraram (Compraram ÷ Ativos).
+💡 Dica: Relacionamento constante por WhatsApp e ligações!`
+  },
+  carteira: {
+    keywords: ["carteira","gestão de carteira","inativo","ativo","extintos","redistribuição","120 dias","90 dias","cliente inativo","reativação"],
+    title: "👥 Gestão de Carteira de Clientes",
+    content: `**GESTÃO DE CARTEIRA DELRIO**
+
+**CLASSIFICAÇÃO DE CLIENTES:**
+✅ **Ativo:** até 90 dias sem compra
+⚠️ **Inativo:** a partir do 91º dia (pode receber contato digital)
+🔴 **Extintos:** acima de 10 meses inativos (removidos da carteira, acessados pelo CRM)
+
+---
+
+**REGRAS COMPULSÓRIAS:**
+
+📌 **Acima de 120 dias sem compra:** Redistribuição automática e uniforme entre a equipe
+
+📌 **Férias/ausência até 30 dias:** Carteira dividida igualmente entre a equipe
+
+📌 **Licença médica/substituição:** Carteira integral para novo vendedor
+
+📌 **Novos cadastros:** Vão para o vendedor mais novo (meta = 100k/mês)
+
+📌 **Intervenção gerencial:** Gerente pode solicitar desmembramento ou migração a qualquer momento
+
+---
+
+**ATUAÇÃO POR ESTÁGIO:**
+• **Cliente novo (0-30 dias):** Ligue para acompanhar resultado e giro
+• **Ativo em risco:** Contato proativo com proposta personalizada
+• **Inativo (91-120 dias):** Oferta especial de reativação
+• **Inativo (120+ dias):** Redistribuição + abordagem de novo vendedor
+
+---
+⚠️ **Carteira é da empresa, não do vendedor!**`
+  },
+  comissao: {
+    keywords: ["comissão","comissionamento","meta","faixa","percentual","salário","ganhos","remuneração","bônus","fator coletivo"],
+    title: "💰 Comissionamento",
+    content: `**MODELO DE COMISSIONAMENTO DELRIO**
+
+**COMISSÃO DO VENDEDOR (por % da meta):**
+
+| Faixa | Resultado | Comissão |
+|-------|-----------|----------|
+| Faixa 1 | 0 ~ 99,9% | 0,5% |
+| Faixa 2 | 100 ~ 109,99% | 1,0% |
+| Faixa 3 | 110 ~ 119,99% | 1,1% |
+| Faixa 4 | 120 ~ 129,99% | 1,2% |
+| Faixa 5 | Acima de 130% | 1,4% |
+
+🌟 **FATOR COLETIVO: +0,2%**
+Se a LOJA atingir 100% da meta, TODOS os vendedores ganham +0,2% extras.
+
+**Exemplo:** Vendedor na faixa 1 + loja bateu meta = 0,5% + 0,2% = **0,7%**
+**Exemplo:** Vendedor na faixa 4 + loja bateu meta = 1,2% + 0,2% = **1,4%**
+
+---
+
+**COMISSÃO DO GERENTE:**
+
+| Faixa | Resultado | Comissão |
+|-------|-----------|----------|
+| Faixa 1 | 0 ~ 99,9% | 0,5% |
+| Faixa 2 | 100 ~ 109,99% | 1,2% |
+| Faixa 3 | 110 ~ 119,99% | 1,3% |
+| Faixa 4 | 120 ~ 129,99% | 1,4% |
+| Faixa 5 | Acima de 130% | 1,6% |
+
+---
+
+**REGRAS DE META:**
+• Meta da loja dividida igualmente entre vendedores
+• Novos contratados: -25% nos primeiros 3 meses
+• Férias: carteira redistribuída = meta redistribuída`
+  },
+  pagamento: {
+    keywords: ["pagamento","pix","cartão","dinheiro","parcelamento","desconto","link de pagamento","parcelas","crédito","débito","meios de pagamento"],
+    title: "💳 Política de Pagamento e Parcelamento",
+    content: `**MEIOS DE PAGAMENTO ACEITOS:**
+• 💵 Dinheiro
+• 📱 PIX
+• 🏦 Depósito em conta corrente
+• 💳 Cartão crédito/débito: Mastercard, Visa, Elo
+• 🔗 Link de pagamento (até 6x)
+
+---
+
+**DESCONTO À VISTA: 10%**
+Para pagamentos com PIX, Débito ou Dinheiro.
+
+---
+
+**PARCELAMENTO NO CRÉDITO:**
+
+| Valor da Compra | Parcelas |
+|----------------|----------|
+| Até R$ 250,00 | 1x (à vista) |
+| R$ 251 ~ R$ 399 | 2x |
+| R$ 400 ~ R$ 499 | 3x |
+| R$ 500 ~ R$ 599 | 4x |
+| R$ 600 ~ R$ 699 | 5x |
+| Acima de R$ 700 | até 6x |
+
+---
+
+🚨 **PROIBIDO:** PIX em conta pessoal de colaboradores!
+Todos os pagamentos exclusivamente nos canais oficiais.`
+  },
+  troca: {
+    keywords: ["troca","devolução","política de troca","prazo","30%","45 dias","defeito","nota fiscal","sem uso"],
+    title: "🔄 Política de Trocas e Devoluções",
+    content: `**POLÍTICA DE TROCAS DELRIO**
+
+**REGRAS GERAIS:**
+✅ Trocas em qualquer dia da semana
+✅ Limite: até **30%** dos itens comprados no mês da NF
+✅ Prazo: até o **último dia útil do mês seguinte** à compra
+✅ Obrigatório apresentar **nota fiscal**
+
+---
+
+**NÃO ACEITAMOS TROCA DE:**
+❌ Peças com evidência de uso
+❌ Modeladores e calças modeladoras
+❌ Lingerie branca (exceto se for kit)
+❌ Peças sem etiqueta
+❌ Embalagem danificada/rasurada
+❌ Produtos de saldo, outlet ou 2ª qualidade
+❌ Lançamentos com menos de **30 dias** de venda
+
+---
+
+**REGRAS FINANCEIRAS:**
+• Crédito = valor líquido pago (conforme NF)
+• Novo item mais barato = gera **crédito por 45 dias**
+• Novo item mais caro = cliente paga a **diferença**
+• Mesma referência (cor/tamanho) = sem ajuste financeiro
+
+---
+
+**PRODUTO COM DEFEITO:**
+Troca garantida por lei!
+→ Abrir "Chamado de Defeito" + foto/vídeo + separar em quarentena
+
+---
+
+**FLUXO OPERACIONAL:**
+1. Validar NF e prazo (45 dias)
+2. Verificar se está dentro dos 30%
+3. Inspecionar o item
+4. Classificar: conveniência ou defeito
+5. Calcular valores
+6. Concluir (trocar, cobrar diferença ou recusar com motivo registrado)`
+  },
+  frete: {
+    keywords: ["frete","entrega","envio","sedex","logística","grátis","frete grátis","transportadora","prazo entrega"],
+    title: "🚚 Política de Frete e Entrega",
+    content: `**POLÍTICA DE FRETE DELRIO**
+
+**FRETE GRÁTIS POR REGIÃO:**
+
+| Região | Valor mínimo | Limite |
+|--------|-------------|--------|
+| Nordeste | R$ 1.200,00 | 5% do pedido |
+| Sudeste | R$ 1.500,00 | 5% do pedido |
+| Sul | R$ 1.800,00 | 5% do pedido |
+| Centro-Oeste | R$ 1.800,00 | 5% do pedido |
+| Norte | R$ 2.000,00 | 5% do pedido |
+
+⚠️ **Regra do teto:** Se o frete ultrapassar 5% do pedido, a diferença fica por conta do cliente.
+
+---
+
+**FORNECEDORES:**
+• Metropolitano: Uber Entregas, Loggi, parceiros locais
+• Televendas: Datafrete, J&T, JadLog, Azul Log
+
+---
+
+**REGRAS DE ENTREGA:**
+• Atraso → registrar reclamação na transportadora
+• Prazo de resposta: até 10 dias úteis
+• Mercadoria extraviada → reembolso de 100% em até 15 dias
+
+---
+🚨 **PROIBIDO:**
+❌ Frete grátis fora da política
+❌ Pagamento de frete em conta de colaboradores`
+  },
+  preparacao: {
+    keywords: ["preparação","abertura loja","reunião de bom dia","lounge","vitrine","visual","limpeza","organização","antes de abrir"],
+    title: "🏪 Preparação Diária da Loja",
+    content: `**PREPARAÇÃO DIÁRIA DA LOJA**
+"Todo bom artista faz uma preparação impecável para seu show."
+
+**A preparação tem 2 frentes:** Pessoas + Processos = Resultado
+
+---
+
+**1. PESSOAS — Reunião de Bom Dia:**
+• Alinhar metas do dia, promoções e novidades
+• Conferir postura e aparência (maquiagem, cabelo, higiene)
+• Reforçar: sorriso, empatia, disposição
+• Reconhecer e celebrar resultados do dia anterior
+
+---
+
+**2. PROCESSOS — Organização Física:**
+• Loja limpa, bem iluminada e organizada
+• Checar Lounge: TV, água, café, Rádio DelRio, fragrância
+• Produtos expostos de forma acessível e atraente
+• Vitrine limpa e produzida conforme trade marketing
+• Manequins e displays atualizados
+
+---
+
+**REVISÃO FINAL:**
+✅ "Passeio pela loja" simulando ser cliente
+✅ Testar Rádio DelRio, TV, iluminação, fragrância
+✅ Verificar materiais: catálogos, flyers, brindes
+✅ Confirmar sistema de pagamento operacional
+✅ Equipe posicionada no salão (sem agrupamentos!)`
+  },
+  vm: {
+    keywords: ["visual merchandising","vm","exposição","colmeia","braço","vitrine","manequim","organização produto","layout","sinalização","aroma","som rádio"],
+    title: "🎨 Visual Merchandising",
+    content: `**VISUAL MERCHANDISING DELRIO**
+"A loja é um vendedor silencioso."
+
+---
+
+**ORGANIZAÇÃO POR ZONA:**
+
+🔴 **Entrada (hot points):** Lançamentos — trocar semanalmente
+📦 **Sequência de parede:**
+1. Linha Basics
+2. Shapewear (camisetas em cima, modeladores/calcinhas embaixo)
+3. Fitness
+4. Outwear
+5. Kids
+6. Noite
+7. **Fundo (próximo ao caixa):** Saldo
+
+---
+
+**REGRAS DE EXPOSIÇÃO:**
+• Organize por família → cor → tamanho de manequim
+• Máx. 12 a 24 peças por braço frontal
+• Máx. 48 peças nos tubos laterais
+• Distância entre peças: 0,5 cm (um dedo)
+• Colmeias: organizar verticalmente (caixas / bolsas)
+• Gavetas: espelho do que está exposto, por modelo e tamanho
+
+---
+
+**LOUNGE DA REVENDEDORA:**
+• Sem peças, caixas ou obstrução
+• Garrafa térmica ou cafeteira
+• Sachês de açúcar e adoçante
+• Snacks e copos descartáveis
+
+---
+
+**AROMA:** Aplicar Aroma DelRio **3x ao dia** (exclusivo para ambientação!)
+**SOM:** Rádio DelRio no Spotify — das 8h ao fechamento. Não substituir!
+
+---
+
+**VITRINE:**
+• Trocar produtos toda **sexta/sábado** conforme Checklist Fácil
+• Vidraças sempre limpas, sem adesivos de campanhas antigas`
+  },
+  dosndonts: {
+    keywords: ["inegociável","proibido","não pode","regra","do's","dont's","condutas","advertência"],
+    title: "⛔ Inegociáveis e Regras de Conduta",
+    content: `**INEGOCIÁVEIS DELRIO — DO's e DON'Ts**
+
+❌ **PROIBIDO:**
+1. Terceirizar descontos e benefícios sem autorização
+2. Postergar vendas em benefício próprio
+3. Informar dados incorretos sobre funcionamento da loja
+4. Receber PIX em conta pessoal
+5. Produto sair da loja sem conferência do fiscal/gerente/caixa
+6. Usar cadastro de consultora em benefício de terceiros
+7. Discussão/atrito no salão de vendas (especialmente com cliente presente)
+8. Usar patrimônio da loja para fins pessoais
+9. Produto sair sem NF (reservas via sistema, duração de 48h)
+10. Transações comerciais entre colaboradores no horário de expediente
+11. Infrações de ponto (geram advertência por escrito)
+12. Férias em novembro e dezembro (VETADO)
+13. Dois vendedores em férias simultâneas (máx. 1 por mês)
+
+---
+
+**REGRAS DE PONTO:**
+• Registrar entrada E saída obrigatoriamente
+• Intervalo: mínimo 01:10 / máximo 01:50
+• Descanso entre jornadas: mínimo 11 horas
+• Limite de horas extras: 02:00/dia
+• Atestados: aceitos em até 48h, com CRM/CRO válidos`
+  },
+  ritos: {
+    keywords: ["reunião","rito","alinhamento","bom dia","semanal","mensal","quinzenal","fca","fatos causas ações","feedback","pauta"],
+    title: "📅 Ritos de Gestão",
+    content: `**RITOS DE GESTÃO DELRIO**
+
+---
+
+**1. ALINHAMENTO DIÁRIO DE LOJA (15-20 min)**
+Conduzido pelo gerente de loja, todos os dias.
+
+Pauta:
+1. Bom dia coletivo (clima positivo)
+2. Dinâmica/brincadeira rápida
+3. Leitura dos resultados D-1 (KPIs)
+4. Reconhecimento dos destaques positivos
+5. Avisos corporativos (campanhas, lançamentos)
+6. Desafio do dia + metas de venda, positivação, cadastros
+7. Finalização motivacional
+
+---
+
+**2. ALINHAMENTO SEMANAL/MENSAL (±40 min)**
+Gerentes de loja + Gerente Comercial — toda segunda-feira à tarde.
+
+Pauta:
+1. Cumprimentos iniciais
+2. Ranking de faturamento por desvio
+3. Overview do resultado regional
+4. Benchmark (melhor resultado da semana)
+5. FCA do maior desvio negativo
+6. Avisos gerais (VM, RH, campanhas)
+7. Encerramento e próximas ações
+
+---
+
+**3. FCA — Fatos, Causas e Ações**
+Método obrigatório em todas as reuniões gerenciais:
+• **Fatos:** análise objetiva dos indicadores
+• **Causas:** por que os resultados foram positivos ou negativos
+• **Ações:** corretivas ou de reforço com responsáveis e prazos
+
+---
+
+**4. FOLLOW-UP TOP 10 CLIENTES**
+Semanalmente, gerente acompanha os 10 melhores clientes:
+1. Cumprimento cordial
+2. Sondagem de desempenho de venda
+3. Sondagem de necessidades comerciais
+4. Sondagem de qualidade do atendimento
+5. Convite à loja
+6. Sugestão de ações para taxa de sucesso`
+  },
+  estoque: {
+    keywords: ["estoque","armazenamento","fifo","organização estoque","etiqueta","sku","referência","gaveta","reposição"],
+    title: "📦 Organização e Armazenamento de Estoque",
+    content: `**ORGANIZAÇÃO DE ESTOQUE DELRIO**
+
+**ORDEM DE SEPARAÇÃO:**
+1. **Linha de produto:** Basics, Fitness, Outwear, Shapewear, Noite
+2. **Categoria:** cueca, calcinha, sutiã, legging, top, camisola...
+3. **Referência** (SKU/modelo)
+4. **Tamanho** (grade)
+
+---
+
+**IDENTIFICAÇÃO VISUAL:**
+• Etiquetas à mostra, voltadas para frente
+• Caixas/prateleiras com etiqueta de endereço
+• Nunca misturar referências ou tamanhos diferentes na mesma caixa
+
+---
+
+**PADRÕES DE ARMAZENAGEM:**
+✅ Limpo, seco e arejado — longe do chão e alto tráfego
+✅ Produtos dobrados e empilhados uniformemente
+✅ Regra **FIFO** — primeiro que entra, primeiro que sai
+✅ Não amassar embalagens nem danificar etiquetas
+
+---
+
+**PREÇOS:**
+Consultar pelo sistema:
+• Bipando o código de barras
+• Digitando a referência do produto
+• Digitando o código SKU`
+  },
+  delrio: {
+    keywords: ["delrio","história","empresa","fundação","missão","visão","valores","jeito delrio","fundador","carlos pereira","fortaleza","1963","seamless"],
+    title: "🏢 DelRio — Quem Somos",
+    content: `**A HISTÓRIA DELRIO**
+
+Fundada em **1963**, em **Fortaleza (CE)** por **Carlos Pereira**, inspirado pela força de sua mãe, **Dona Tereza**, que costurava sutiãs em casa para sustentar a família.
+
+Hoje: **Maior fabricante de moda íntima do Brasil.**
+
+Fabricamos para: **Calvin Klein, Adidas, Aramis** e outras grandes marcas.
+
+Tecnologias: **seamless**, tecidos altamente tecnológicos, matéria-prima própria.
+
+---
+
+**MISSÃO:** Surpreender a todos com excelência.
+**VISÃO:** Ser referência mundial em produto, inovação e serviço.
+**PROPÓSITO:** Inspirar a viver com confiança, empoderando pessoas de forma sustentável.
+
+---
+
+**VALORES:**
+• Gente
+• Ética
+• Foco no Cliente
+• Empoderamento
+• Inovação
+• Sustentabilidade
+• Compromisso com Resultado
+
+---
+
+**O JEITO DELRIO:**
+Margem de lucro para consultoras: até **80%** (vs 30% em cosméticos).
+80% das consultoras começaram pelo consumo próprio.
+
+**"Vamos com a DelRio, vamos com tudo!"** 💜`
+  },
+  default: {
+    keywords: [],
+    title: "🌟 Central de Conhecimento DelRio",
+    content: `Olá, equipe DelRio! Sou a **Central de Conhecimento** treinada com o Manual de Operações da DelRio. 💜
+
+Posso te ajudar com:
+
+🌟 **Vendas**
+• Passo 1 — Abertura e conexão com cliente
+• Passo 2 — Sondagem e perfis de cliente
+• Passo 3 — Solução e modelo de negócio
+• Passo 4 — Como lidar com objeções
+• Passo 5 — Fechamento da venda
+• Passo 6 — Pós-venda e fidelização
+
+📊 **Gestão**
+• KPIs e indicadores de performance
+• Ritos de gestão (reuniões, FCA)
+• Gestão de carteira de clientes
+• Comissionamento e metas
+
+🏪 **Operações**
+• Preparação diária da loja
+• Visual merchandising
+• Estoque e organização
+• Política de trocas e devoluções
+• Meios de pagamento e parcelamento
+• Frete e entrega
+
+📋 **Regras**
+• Inegociáveis e condutas
+• Gestão de férias e ponto
+
+Pergunte qualquer coisa! 💪`
+  }
+};
+
+const TOPICS = [
+  { label: "🌟 6 Passos de Venda", msg: "Me explique os 6 passos do atendimento DelRio" },
+  { label: "🛡️ Objeções", msg: "Como lidar com objeções dos clientes?" },
+  { label: "📊 KPIs", msg: "Quais são os KPIs da DelRio?" },
+  { label: "👥 Carteira", msg: "Como funciona a gestão de carteira de clientes?" },
+  { label: "💳 Pagamentos", msg: "Quais são as formas de pagamento e parcelamento?" },
+  { label: "🔄 Trocas", msg: "Qual é a política de trocas da DelRio?" },
+  { label: "🚚 Frete", msg: "Qual a política de frete da DelRio?" },
+  { label: "💰 Comissão", msg: "Como funciona o comissionamento?" },
+  { label: "🎨 Visual", msg: "Como deve ser o visual merchandising da loja?" },
+  { label: "🏢 DelRio", msg: "Me fale sobre a história da DelRio" },
+];
+
+const INITIAL_QUICK = [
+  { l: "🌟 Abertura de venda", m: "Como fazer a abertura da venda?" },
+  { l: "🛡️ Lidar com objeções", m: "Como lidar com objeções dos clientes?" },
+  { l: "📊 KPIs principais", m: "Quais são os KPIs da DelRio?" },
+  { l: "💳 Formas de pagamento", m: "Quais são as formas de pagamento e parcelamento?" },
+];
+
+function getQuicks(msg) {
+  const m = normalize(msg);
+  if (m.includes("passo") || m.includes("abertura") || m.includes("atendimento")) return [
+    { l: "Sondagem", m: "Como fazer a sondagem do cliente?" },
+    { l: "Solução", m: "Como apresentar a solução e o modelo de negócio?" },
+    { l: "Objeções", m: "Como lidar com objeções?" },
+    { l: "Fechamento", m: "Como fazer o fechamento da venda?" },
+  ];
+  if (m.includes("kpi") || m.includes("indicador") || m.includes("meta") || m.includes("resultado")) return [
+    { l: "Comissionamento", m: "Como funciona o comissionamento?" },
+    { l: "Ritos de gestão", m: "Como são os ritos de gestão?" },
+    { l: "Carteira de clientes", m: "Como funciona a gestão de carteira?" },
+    { l: "Reunião diária", m: "Como conduzir a reunião de bom dia?" },
+  ];
+  if (m.includes("pagamento") || m.includes("pix") || m.includes("cartao") || m.includes("parcela")) return [
+    { l: "Política de trocas", m: "Qual é a política de trocas?" },
+    { l: "Frete e entrega", m: "Como funciona o frete?" },
+    { l: "Comissão", m: "Como funciona o comissionamento?" },
+    { l: "KPIs", m: "Quais são os KPIs da DelRio?" },
+  ];
+  if (m.includes("objecao") || m.includes("nao quero") || m.includes("medo") || m.includes("caro")) return [
+    { l: "Fechamento", m: "Como fazer o fechamento da venda?" },
+    { l: "Pós-venda", m: "Como fazer o pós-venda?" },
+    { l: "Argumentos DelRio", m: "Quais são os argumentos fortes da DelRio?" },
+    { l: "Scripts prontos", m: "Me dê scripts de venda prontos" },
+  ];
+  return INITIAL_QUICK;
+}
+
+function normalize(s) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function getAnswer(question) {
+  const q = normalize(question);
+  for (const [, entry] of Object.entries(KB)) {
+    if (entry.keywords.some(k => q.includes(normalize(k)))) {
+      return { title: entry.title, content: entry.content };
+    }
+  }
+  return { title: KB.default.title, content: KB.default.content };
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function formatContent(text) {
+  const allLines = text.split("\n");
+  const tableLines = allLines.filter(l => l.trim().startsWith("|"));
+  const hasTable = tableLines.length > 0;
+
+  // Build text HTML (skip table lines)
+  let textHTML = "";
+  for (const line of allLines) {
+    if (line.trim().startsWith("|")) continue;
+    const formatted = line
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/✅/g, "<span style='color:#22c55e'>✅</span>")
+      .replace(/❌/g, "<span style='color:#ef4444'>❌</span>");
+    textHTML += `<p style="margin:${line === "" ? "5px 0" : "1px 0"}; min-height:${line === "" ? "6px" : "auto"}">${formatted}</p>`;
+  }
+
+  let tableHTML = "";
+  if (hasTable) {
+    tableHTML += `<div class="msg-table"><table>`;
+    let rowIdx = 0;
+    for (const row of tableLines) {
+      if (row.replace(/\|/g, "").replace(/-/g, "").trim() === "") continue;
+      const cells = row.split("|").filter(c => c.trim());
+      const isHeader = rowIdx === 0;
+      const rowClass = isHeader ? "tbl-header" : (rowIdx % 2 === 0 ? "tbl-even" : "tbl-odd");
+      tableHTML += `<tr class="${rowClass}">`;
+      for (const cell of cells) {
+        tableHTML += `<td>${cell.trim()}</td>`;
+      }
+      tableHTML += `</tr>`;
+      rowIdx++;
+    }
+    tableHTML += `</table></div>`;
+  }
+
+  return textHTML + tableHTML;
+}
+
+function createMsgEl(role, text, title) {
+  const isAI = role === "ai";
+  const row = document.createElement("div");
+  row.className = "msg-row" + (isAI ? "" : " user");
+
+  const avatar = document.createElement("div");
+  avatar.className = "msg-avatar " + role;
+  avatar.textContent = isAI ? "💜" : "👤";
+
+  const bubble = document.createElement("div");
+  bubble.className = "msg-bubble " + role;
+
+  if (title && isAI) {
+    const titleEl = document.createElement("div");
+    titleEl.className = "msg-title";
+    titleEl.textContent = title;
+    bubble.appendChild(titleEl);
+  }
+
+  const content = document.createElement("div");
+  content.innerHTML = formatContent(text);
+  bubble.appendChild(content);
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  return row;
+}
+
+// ============================================================
+// APP STATE
+// ============================================================
+const messagesEl = document.getElementById("messages");
+const typingEl = document.getElementById("typing");
+const quicksEl = document.getElementById("quicks");
+const taEl = document.getElementById("ta");
+const sendBtn = document.getElementById("send-btn");
+const topicsEl = document.getElementById("topics");
+
+let loading = false;
+
+function scrollBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function appendMsg(role, text, title) {
+  const el = createMsgEl(role, text, title);
+  messagesEl.insertBefore(el, typingEl);
+  scrollBottom();
+}
+
+function setLoading(val) {
+  loading = val;
+  typingEl.style.display = val ? "flex" : "none";
+  scrollBottom();
+}
+
+function renderQuicks(list) {
+  quicksEl.innerHTML = "";
+  for (const q of list) {
+    const btn = document.createElement("button");
+    btn.className = "qbtn";
+    btn.textContent = q.l;
+    btn.onclick = () => send(q.m);
+    quicksEl.appendChild(btn);
+  }
+}
+
+function send(text) {
+  const msg = (text || taEl.value).trim();
+  if (!msg || loading) return;
+  taEl.value = "";
+  taEl.style.height = "auto";
+
+  appendMsg("user", msg, null);
+  setLoading(true);
+
+  setTimeout(() => {
+    const answer = getAnswer(msg);
+    setLoading(false);
+    appendMsg("ai", answer.content, answer.title);
+    renderQuicks(getQuicks(msg));
+  }, 500 + Math.random() * 300);
+}
+
+// Init topics
+for (const t of TOPICS) {
+  const btn = document.createElement("button");
+  btn.className = "chip";
+  btn.textContent = t.label;
+  btn.onclick = () => send(t.msg);
+  topicsEl.appendChild(btn);
+}
+
+// Init quick buttons
+renderQuicks(INITIAL_QUICK);
+
+// Init welcome message
+appendMsg("ai",
+  `Olá, equipe DelRio! 💜\n\nSou a **Central de Conhecimento** treinada com o Manual de Operações da DelRio. Estou aqui para ajudar você a **vender mais e melhor**!\n\nPosso responder sobre os 6 passos do atendimento, KPIs, scripts de venda, objeções, política de trocas, frete, comissionamento e muito mais.\n\nO que você quer saber hoje? 💪`,
+  "💜 Central de Conhecimento DelRio"
+);
+
+// Send button
+sendBtn.addEventListener("click", () => send());
+
+// Textarea auto-resize + Enter
+taEl.addEventListener("input", () => {
+  taEl.style.height = "auto";
+  taEl.style.height = Math.min(taEl.scrollHeight, 100) + "px";
+});
+taEl.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+</script>
+</body>
+</html>
